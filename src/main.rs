@@ -13,6 +13,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(command) = Cli::parse().command {
         match command {
             Commands::Book => book::run()?,
+            Commands::Alter => alter()?,
         }
     } else {
         let conn = database::connect()?;

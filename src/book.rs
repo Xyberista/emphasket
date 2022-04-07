@@ -1,14 +1,13 @@
-use rusqlite::Connection;
 use std::fs;
 use std::io::{BufWriter, Write};
-use std::path::Path;
 
+use crate::database::connect;
 use crate::term::Term;
 
 const BASE: &str = "./book/src/";
 
 pub fn run() -> rusqlite::Result<(), Box<dyn std::error::Error>> {
-    let conn = Connection::open("./words.sqlite3")?;
+    let conn = connect()?;
     let mut stmt = conn.prepare("SELECT * FROM words")?;
     let terms: Vec<Term> = stmt
         .query_map([], |row| {
@@ -27,6 +26,9 @@ pub fn run() -> rusqlite::Result<(), Box<dyn std::error::Error>> {
 }
 
 fn setup(terms: &[Term]) -> Result<(), Box<dyn std::error::Error>> {
+    if !std::path::Path::new("./book/src").exists() {
+        return Err("Please initialize a mdbook with the folder name: book".into());
+    }
     create_readme()?;
     create_summary(terms)
 }
@@ -48,12 +50,7 @@ fn create_summary(terms: &[Term]) -> Result<(), Box<dyn std::error::Error>> {
     writeln!(writer, "[Introduction](README.md)\n")?;
     writeln!(writer, "# Terms\n")?;
     for term in terms {
-        let line = format!(
-            "- [{}]({}{}.md)",
-            term.name(),
-            "terms/",
-            term.filename()
-        );
+        let line = format!("- [{}]({}{}.md)", term.name(), "terms/", term.filename());
         writeln!(writer, "{line}")?;
     }
 

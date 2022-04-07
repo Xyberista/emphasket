@@ -70,8 +70,10 @@ fn add_single_term(conn: &Connection, id: usize) -> Result<bool> {
         .expect("Failed to read line");
     let book_definition = book_definition.trim().to_string();
 
+    // TODO: implement another command without this portion for easier data entry
+    let user_definition = String::new();
     // prompt("User definition:");
-    let mut user_definition = String::new();
+    // let mut user_definition = String::new();
     // io::stdin()
     //     .read_line(&mut user_definition)
     //     .expect("Failed to read line");
