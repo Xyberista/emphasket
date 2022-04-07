@@ -1,7 +1,7 @@
 use rusqlite::{Connection, Result};
 use std::io::{self, Write};
 
-use crate::{database::insert_term, Term};
+use crate::{database::insert_term, term::Term};
 
 const PROMPT: &str = "λ>";
 
@@ -12,6 +12,10 @@ fn prompt(prompt_for: &str) {
 }
 
 pub fn run(conn: Connection) -> Result<()> {
+    let mut stmt = conn.prepare("SELECT * from words")?;
+    let count = stmt.query_map([], |_| Ok(()))?.count();
+    let id = count + 1;
+
     loop {
         println!("Statistics Project Menu Screen");
         println!("1: Add Single Term");
@@ -31,10 +35,10 @@ pub fn run(conn: Connection) -> Result<()> {
 
         match command {
             "1" => {
-                add_single_term(&conn)?;
+                add_single_term(&conn, id)?;
             }
             "2" => {
-                add_multiple_terms(&conn)?;
+                add_multiple_terms(&conn, id)?;
             }
             "Q" | "q" => break,
             _ => continue,
@@ -47,7 +51,7 @@ pub fn run(conn: Connection) -> Result<()> {
 ///
 /// Aborts the process if the provided term is empty
 /// Returns whether a term was added
-fn add_single_term(conn: &Connection) -> Result<bool> {
+fn add_single_term(conn: &Connection, id: usize) -> Result<bool> {
     prompt("Term: (Leave empty to abort)");
     let mut term = String::new();
     io::stdin()
@@ -57,23 +61,27 @@ fn add_single_term(conn: &Connection) -> Result<bool> {
     if term.is_empty() {
         return Ok(false);
     }
+    let term = term.trim().to_lowercase();
 
     prompt("Book definition:");
     let mut book_definition = String::new();
     io::stdin()
         .read_line(&mut book_definition)
         .expect("Failed to read line");
+    let book_definition = book_definition.trim().to_string();
 
-    prompt("User definition:");
+    // prompt("User definition:");
     let mut user_definition = String::new();
-    io::stdin()
-        .read_line(&mut user_definition)
-        .expect("Failed to read line");
+    // io::stdin()
+    //     .read_line(&mut user_definition)
+    //     .expect("Failed to read line");
+    let user_definition = user_definition.trim().to_string();
 
     let term = Term {
         term,
         book_definition,
         user_definition,
+        id,
     };
 
     if let Err(e) = insert_term(conn, term) {
@@ -85,12 +93,14 @@ fn add_single_term(conn: &Connection) -> Result<bool> {
 }
 
 /// Adds terms continuously until an empty term is inputted
-fn add_multiple_terms(conn: &Connection) -> Result<()> {
+fn add_multiple_terms(conn: &Connection, id: usize) -> Result<()> {
+    let mut id = id;
     loop {
-        let added = add_single_term(conn)?;
+        let added = add_single_term(conn, id)?;
         if !added {
             break;
         }
+        id += 1;
     }
     Ok(())
 }

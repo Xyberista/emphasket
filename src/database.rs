@@ -1,6 +1,6 @@
 use rusqlite::{params, Connection, Result};
 
-use crate::Term;
+use crate::term::Term;
 
 /// Sets up a connection to the database, creating a new one if it does not exist.
 pub fn connect() -> Result<Connection> {
@@ -10,6 +10,7 @@ pub fn connect() -> Result<Connection> {
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS words (
+            id                      INTEGER,
             term                    TEXT PRIMARY KEY,
             book_definition         TEXT,
             user_definition         TEXT
@@ -21,8 +22,13 @@ pub fn connect() -> Result<Connection> {
 
 pub fn insert_term(conn: &Connection, term: Term) -> Result<()> {
     conn.execute(
-        "INSERT INTO words (term, book_definition, user_definition) VALUES (?1, ?2, ?3)",
-        params![term.term, term.book_definition, term.user_definition],
+        "INSERT INTO words (id, term, book_definition, user_definition) VALUES (?1, ?2, ?3, ?4)",
+        params![
+            term.id,
+            term.term,
+            term.book_definition,
+            term.user_definition
+        ],
     )?;
     Ok(())
 }
