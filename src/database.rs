@@ -13,7 +13,8 @@ pub fn connect() -> Result<Connection> {
             id                      INTEGER,
             term                    TEXT PRIMARY KEY,
             book_definition         TEXT,
-            user_definition         TEXT
+            user_definition         TEXT,
+            example                 TEXT
         )",
         [],
     )?;

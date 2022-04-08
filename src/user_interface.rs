@@ -5,10 +5,14 @@ use crate::{database::insert_term, term::Term};
 
 const PROMPT: &str = "λ>";
 
-fn prompt(prompt_for: &str) {
-    println!("{prompt_for}");
+fn prompt() {
     print!("{PROMPT}");
     io::stdout().flush().unwrap();
+}
+
+fn prompt_with(prompt_for: &str) {
+    println!("{prompt_for}");
+    prompt();
 }
 
 pub fn run(conn: &Connection) -> Result<()> {
@@ -23,7 +27,7 @@ pub fn run(conn: &Connection) -> Result<()> {
         println!("Q: Quit");
         println!();
 
-        prompt("command");
+        prompt_with("command");
 
         let mut command = String::new();
         io::stdin()
@@ -52,7 +56,7 @@ pub fn run(conn: &Connection) -> Result<()> {
 /// Aborts the process if the provided term is empty
 /// Returns whether a term was added
 fn add_single_term(conn: &Connection, id: usize) -> bool {
-    prompt("Term: (Leave empty to abort)");
+    prompt_with("Term: (Leave empty to abort)");
     let mut term = String::new();
     io::stdin()
         .read_line(&mut term)
@@ -63,11 +67,19 @@ fn add_single_term(conn: &Connection, id: usize) -> bool {
     }
     let term = term.trim().to_lowercase();
 
-    prompt("Book definition:");
+    prompt_with("Book definition: (Empty line to finish)");
     let mut book_definition = String::new();
-    io::stdin()
-        .read_line(&mut book_definition)
-        .expect("Failed to read line");
+    loop {
+        let mut line = String::new();
+        io::stdin()
+            .read_line(&mut line)
+            .expect("Failed to read line");
+        if line.is_empty() {
+            break;
+        }
+        book_definition += &line;
+        prompt();
+    }
     let book_definition = book_definition.trim().to_string();
 
     // TODO: implement another command without this portion for easier data entry
