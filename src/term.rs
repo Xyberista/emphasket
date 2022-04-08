@@ -12,6 +12,6 @@ impl Term {
     }
 
     pub fn filename(&self) -> String {
-        self.term.replace(' ', "_")
+        self.term.replace(' ', "_") + ".md"
     }
 }
