@@ -1,25 +1,14 @@
 use std::fs;
 use std::io::{BufWriter, Write};
 
-use crate::database::connect;
+use crate::database::{connect, get_terms};
 use crate::term::Term;
 
 const BASE: &str = "./book/src/";
 
 pub fn run() -> rusqlite::Result<(), Box<dyn std::error::Error>> {
     let conn = connect()?;
-    let mut stmt = conn.prepare("SELECT * FROM words")?;
-    let terms: Vec<Term> = stmt
-        .query_map([], |row| {
-            Ok(Term {
-                id: row.get(0)?,
-                term: row.get(1)?,
-                book_definition: row.get(2)?,
-                user_definition: row.get(3)?,
-            })
-        })?
-        .map(|t| t.unwrap())
-        .collect();
+    let terms = get_terms(&conn)?;
 
     setup(&terms)?;
     create_pages(&terms)?;

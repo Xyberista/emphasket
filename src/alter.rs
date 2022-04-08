@@ -1,21 +1,10 @@
 use rusqlite::params;
 
-use crate::{database::connect, term::Term};
+use crate::database::{connect, get_terms};
 
 pub fn alter() -> rusqlite::Result<()> {
-    let conn = connect().unwrap();
-    let mut stmt = conn.prepare("SELECT * FROM words").unwrap();
-    let terms: Vec<Term> = stmt
-        .query_map([], |row| {
-            Ok(Term {
-                id: row.get(0).unwrap(),
-                term: row.get(1).unwrap(),
-                book_definition: row.get(2).unwrap(),
-                user_definition: row.get(3).unwrap(),
-            })
-        })?
-        .map(|t| t.unwrap())
-        .collect();
+    let conn = connect()?;
+    let terms = get_terms(&conn)?;
     for term in terms {
         conn.execute(
             "UPDATE words SET term = ($1), book_definition = ($2) WHERE id = ($3)",

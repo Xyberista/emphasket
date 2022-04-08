@@ -11,7 +11,7 @@ fn prompt(prompt_for: &str) {
     io::stdout().flush().unwrap();
 }
 
-pub fn run(conn: Connection) -> Result<()> {
+pub fn run(conn: &Connection) -> Result<()> {
     let mut stmt = conn.prepare("SELECT * from words")?;
     let count = stmt.query_map([], |_| Ok(()))?.count();
     let id = count + 1;
@@ -35,10 +35,10 @@ pub fn run(conn: Connection) -> Result<()> {
 
         match command {
             "1" => {
-                add_single_term(&conn, id)?;
+                add_single_term(conn, id);
             }
             "2" => {
-                add_multiple_terms(&conn, id)?;
+                add_multiple_terms(conn, id);
             }
             "Q" | "q" => break,
             _ => continue,
@@ -51,7 +51,7 @@ pub fn run(conn: Connection) -> Result<()> {
 ///
 /// Aborts the process if the provided term is empty
 /// Returns whether a term was added
-fn add_single_term(conn: &Connection, id: usize) -> Result<bool> {
+fn add_single_term(conn: &Connection, id: usize) -> bool {
     prompt("Term: (Leave empty to abort)");
     let mut term = String::new();
     io::stdin()
@@ -59,7 +59,7 @@ fn add_single_term(conn: &Connection, id: usize) -> Result<bool> {
         .expect("Failed to read line");
 
     if term.is_empty() {
-        return Ok(false);
+        return false;
     }
     let term = term.trim().to_lowercase();
 
@@ -80,29 +80,28 @@ fn add_single_term(conn: &Connection, id: usize) -> Result<bool> {
     let user_definition = user_definition.trim().to_string();
 
     let term = Term {
+        id,
         term,
         book_definition,
         user_definition,
-        id,
     };
 
-    if let Err(e) = insert_term(conn, term) {
+    if let Err(e) = insert_term(conn, &term) {
         println!();
         println!("Error: {}", e);
     }
     println!();
-    Ok(true)
+    true
 }
 
 /// Adds terms continuously until an empty term is inputted
-fn add_multiple_terms(conn: &Connection, id: usize) -> Result<()> {
+fn add_multiple_terms(conn: &Connection, id: usize) {
     let mut id = id;
     loop {
-        let added = add_single_term(conn, id)?;
+        let added = add_single_term(conn, id);
         if !added {
             break;
         }
         id += 1;
     }
-    Ok(())
 }

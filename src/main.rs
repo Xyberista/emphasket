@@ -1,6 +1,6 @@
 use alter::alter;
 use clap::Parser;
-use cli::*;
+use cli::{Cli, Commands};
 
 mod alter;
 mod book;
@@ -17,7 +17,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     } else {
         let conn = database::connect()?;
-        user_interface::run(conn)?;
+        user_interface::run(&conn)?;
     }
     Ok(())
 }

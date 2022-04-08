@@ -20,7 +20,7 @@ pub fn connect() -> Result<Connection> {
     Ok(conn)
 }
 
-pub fn insert_term(conn: &Connection, term: Term) -> Result<()> {
+pub fn insert_term(conn: &Connection, term: &Term) -> Result<()> {
     conn.execute(
         "INSERT INTO words (id, term, book_definition, user_definition) VALUES (?1, ?2, ?3, ?4)",
         params![
@@ -31,4 +31,20 @@ pub fn insert_term(conn: &Connection, term: Term) -> Result<()> {
         ],
     )?;
     Ok(())
+}
+
+pub fn get_terms(conn: &Connection) -> Result<Vec<Term>> {
+    let mut stmt = conn.prepare("SELECT * FROM words")?;
+    let terms: Vec<Term> = stmt
+        .query_map([], |row| {
+            Ok(Term {
+                id: row.get(0)?,
+                term: row.get(1)?,
+                book_definition: row.get(2)?,
+                user_definition: row.get(3)?,
+            })
+        })?
+        .map(std::result::Result::unwrap)
+        .collect();
+    Ok(terms)
 }
