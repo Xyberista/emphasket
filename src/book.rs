@@ -10,8 +10,22 @@ pub fn run() -> rusqlite::Result<(), Box<dyn std::error::Error>> {
     let conn = connect()?;
     let terms = get_terms(&conn)?;
 
+    copy_figures()?;
     setup(&terms)?;
     create_pages(&terms)?;
+    Ok(())
+}
+
+fn copy_figures() -> Result<(), Box<dyn std::error::Error>> {
+    for file in std::fs::read_dir("./figures/")? {
+        let file = file?;
+        let destination = format!(
+            "{}{}",
+            "./book/src/figures/",
+            file.file_name().into_string().unwrap()
+        );
+        std::fs::copy(file.path(), destination)?;
+    }
     Ok(())
 }
 
@@ -19,7 +33,7 @@ fn setup(terms: &[Term]) -> Result<(), Box<dyn std::error::Error>> {
     if !std::path::Path::new("./book/src").exists() {
         return Err("Please initialize a mdbook with the folder name: book".into());
     }
-    if !std::path::Path::new("./book/terms").exists() {
+    if !std::path::Path::new("./book/src/terms").exists() {
         std::fs::create_dir("./book/src/terms/")?;
     }
     create_readme()?;
@@ -43,7 +57,7 @@ fn create_summary(terms: &[Term]) -> Result<(), Box<dyn std::error::Error>> {
     writeln!(writer, "[Introduction](README.md)\n")?;
     writeln!(writer, "# Terms\n")?;
     for term in terms {
-        let line = format!("- [{}]({}{})", term.name(), "terms/", term.filename());
+        let line = format!("- [{}](terms/{})", term.name(), term.filename());
         writeln!(writer, "{line}")?;
     }
 
@@ -63,8 +77,17 @@ fn create_page(term: &Term) -> Result<(), Box<dyn std::error::Error>> {
     let mut writer = BufWriter::new(file);
 
     writeln!(writer, "# {}\n", term.name())?;
-    writeln!(writer, "## Book-definition\n")?;
-    writeln!(writer, "{}", term.book_definition.trim_end())?;
+    writeln!(writer, "## Book definition\n")?;
+    writeln!(writer, "{}\n", term.book_definition.trim_end())?;
+    writeln!(writer, "## User definition\n")?;
+    writeln!(writer, "{}\n", term.user_definition.trim_end())?;
+    writeln!(writer, "## Picture\n")?;
+    if !term.picture_link().is_empty() {
+        let picture_name = term.picture_name(&term.picture_extension());
+        writeln!(writer, "![{}](./../figures/{})", term.name(), picture_name)?;
+    }
+    writeln!(writer, "## Example\n")?;
+    writeln!(writer, "{}", term.example.trim_end())?;
 
     writer.flush()?;
     Ok(())
