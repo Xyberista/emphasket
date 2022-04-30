@@ -14,7 +14,8 @@ pub fn connect() -> Result<Connection> {
             term                    TEXT PRIMARY KEY,
             book_definition         TEXT,
             user_definition         TEXT,
-            example                 TEXT
+            example                 TEXT,
+            picture_name            TEXT
         )",
         [],
     )?;
@@ -23,12 +24,13 @@ pub fn connect() -> Result<Connection> {
 
 pub fn insert_term(conn: &Connection, term: &Term) -> Result<()> {
     conn.execute(
-        "INSERT INTO words (id, term, book_definition, user_definition) VALUES (?1, ?2, ?3, ?4)",
+        "INSERT INTO words (id, term, book_definition, user_definition, example) VALUES (?1, ?2, ?3, ?4, ?5)",
         params![
             term.id,
             term.term,
             term.book_definition,
-            term.user_definition
+            term.user_definition,
+            term.example,
         ],
     )?;
     Ok(())
@@ -43,9 +45,26 @@ pub fn get_terms(conn: &Connection) -> Result<Vec<Term>> {
                 term: row.get(1)?,
                 book_definition: row.get(2)?,
                 user_definition: row.get(3)?,
+                example: row.get(4)?,
+                picture_link: row.get(5)?,
             })
         })?
         .map(std::result::Result::unwrap)
         .collect();
     Ok(terms)
+}
+
+pub fn recount() -> Result<()> {
+    let conn = connect()?;
+    let terms = get_terms(&conn)?
+        .into_iter()
+        .enumerate()
+        .map(|(i, s)| Term { id: i + 1, ..s });
+    for term in terms {
+        conn.execute(
+            "UPDATE words SET id = $1 WHERE term = $2",
+            params![term.id, term.term],
+        )?;
+    }
+    Ok(())
 }
