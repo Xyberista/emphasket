@@ -3,6 +3,8 @@ use std::io::{self, Write};
 
 use crate::{database::insert_term, term::Term};
 
+mod alter;
+
 const PROMPT: &str = "λ>";
 
 fn prompt() {
@@ -24,6 +26,7 @@ pub fn run(conn: &Connection) -> Result<()> {
         println!("Statistics Project Menu Screen");
         println!("1: Add Single Term");
         println!("2: Add Multiple Terms");
+        println!("3: Alter Term");
         println!("Q: Quit");
         println!();
 
@@ -43,6 +46,9 @@ pub fn run(conn: &Connection) -> Result<()> {
             }
             "2" => {
                 add_multiple_terms(conn, id);
+            }
+            "3" => {
+                alter::alter_entry(conn).unwrap();
             }
             "Q" | "q" => break,
             _ => continue,
@@ -67,20 +73,7 @@ fn add_single_term(conn: &Connection, id: usize) -> bool {
     }
     let term = term.trim().to_lowercase();
 
-    prompt_with("Book definition: (Empty line to finish)");
-    let mut book_definition = String::new();
-    loop {
-        let mut line = String::new();
-        io::stdin()
-            .read_line(&mut line)
-            .expect("Failed to read line");
-        if line.is_empty() {
-            break;
-        }
-        book_definition += &line;
-        prompt();
-    }
-    let book_definition = book_definition.trim().to_string();
+    let book_definition = multiline_input_with("Book definition");
 
     // TODO: implement another command without this portion for easier data entry
     let user_definition = String::new();
@@ -91,11 +84,16 @@ fn add_single_term(conn: &Connection, id: usize) -> bool {
     //     .expect("Failed to read line");
     let user_definition = user_definition.trim().to_string();
 
+    // TODO: Add example input somehow
+    let example = String::new();
+
     let term = Term {
         id,
         term,
         book_definition,
         user_definition,
+        example,
+        picture_link: String::new(),
     };
 
     if let Err(e) = insert_term(conn, &term) {
@@ -116,4 +114,23 @@ fn add_multiple_terms(conn: &Connection, id: usize) {
         }
         id += 1;
     }
+}
+
+fn multiline_input_with(prompt_for: &str) -> String {
+    let mut result = String::new();
+    println!("{}: (Empty line to finish)", prompt_for);
+    loop {
+        prompt();
+        let mut line = String::new();
+        io::stdin()
+            .read_line(&mut line)
+            .expect("Failed to read line");
+        let line = line.trim_end();
+        if line.is_empty() {
+            break;
+        }
+        result += line;
+        result += "\n";
+    }
+    result
 }
