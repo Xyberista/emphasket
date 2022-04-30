@@ -10,5 +10,7 @@ pub struct Cli {
 #[derive(Subcommand, Debug)]
 pub enum Commands {
     Book,
-    Alter,
+    Recount,
+    Download,
+    Util,
 }
