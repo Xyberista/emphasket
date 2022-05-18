@@ -9,8 +9,12 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
+    /// Copies files to the book directory
     Book,
+    /// Recount the database rows
     Recount,
+    /// Downloads the pictures for each example in the database
     Download,
+    /// Get approximate word count
     Util,
 }

@@ -1,14 +1,19 @@
 use std::fs::File;
 use std::io::prelude::*;
 
+use reqwest::blocking::Client;
+
 use crate::database;
 
 const TARGET_DIR: &str = "./figures/";
 
+/// Downloads from all available links in the term database
 pub fn download() -> Result<(), Box<dyn std::error::Error>> {
     let conn = database::connect()?;
     let terms = database::get_terms(&conn)?;
     conn.close().unwrap();
+
+    let client = Client::new();
 
     for term in terms {
         if term.picture_link().is_empty() {
@@ -21,7 +26,7 @@ pub fn download() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         let target = term.picture_link();
-        let response = reqwest::blocking::get(target)?;
+        let response = client.get(target).send()?;
 
         let mut dest = {
             let extension = response

@@ -19,9 +19,11 @@ pub fn connect() -> Result<Connection> {
         )",
         [],
     )?;
+
     Ok(conn)
 }
 
+/// Inserts the given term into the connected database
 pub fn insert_term(conn: &Connection, term: &Term) -> Result<()> {
     conn.execute(
         "INSERT INTO words (id, term, book_definition, user_definition, example) VALUES (?1, ?2, ?3, ?4, ?5)",
@@ -33,9 +35,11 @@ pub fn insert_term(conn: &Connection, term: &Term) -> Result<()> {
             term.example,
         ],
     )?;
+
     Ok(())
 }
 
+/// Returns all of the terms from the database
 pub fn get_terms(conn: &Connection) -> Result<Vec<Term>> {
     let mut stmt = conn.prepare("SELECT * FROM words")?;
     let terms: Vec<Term> = stmt
@@ -51,9 +55,11 @@ pub fn get_terms(conn: &Connection) -> Result<Vec<Term>> {
         })?
         .map(std::result::Result::unwrap)
         .collect();
+
     Ok(terms)
 }
 
+/// Updates the row number in each row
 pub fn recount() -> Result<()> {
     let conn = connect()?;
     let terms = get_terms(&conn)?
@@ -66,5 +72,6 @@ pub fn recount() -> Result<()> {
             params![term.id, term.term],
         )?;
     }
+
     Ok(())
 }
